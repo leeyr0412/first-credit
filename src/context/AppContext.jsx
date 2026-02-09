@@ -1,35 +1,56 @@
 import { createContext, useContext, useReducer, useEffect } from 'react';
+import {
+  getCreditLimit,
+  getCurrentWeeklyRepayment,
+  calcFutureDeductions,
+  checkDSRExceeded,
+} from './constants.js';
 
 const AppContext = createContext();
 
 // localStorage 키
 const STORAGE_KEY = 'first-credit-data';
 
+// ────────────────────────────────────────
 // 초기 데이터
+// ────────────────────────────────────────
 const defaultState = {
-  mode: 'child', // 'child' | 'parent'
-  balance: 50000, // 자녀 현재 잔액
-  weeklyAllowance: 10000, // 주간 용돈
-  futureDeductions: 0, // 미래 용돈에서 차감될 총액
-  items: [ // 자녀가 등록한 상품 (기본 샘플)
+  mode: 'child',            // 'child' | 'parent'
+  balance: 50000,           // 자녀 현재 잔액
+  weeklyAllowance: 10000,   // 주간 용돈
+  currentWeek: 1,           // 현재 주차
+
+  // items (위시리스트) — 기존 더미 데이터 유지
+  items: [
     { id: '1', name: '레고 닌자고 세트', price: 45000, emoji: '🧱', createdAt: Date.now() - 86400000 },
     { id: '2', name: '포켓몬 카드팩', price: 8000, emoji: '🃏', createdAt: Date.now() - 43200000 },
     { id: '3', name: '아이스크림 케이크', price: 25000, emoji: '🍰', createdAt: Date.now() },
   ],
-  requests: [], // 가불 요청 목록
-  transactions: [ // 거래 내역
+
+  // requests — 할부 계약서 배열 (새 구조)
+  requests: [],
+
+  // transactions — 거래 내역 (기존 더미 데이터 유지)
+  transactions: [
     { id: 't1', type: 'allowance', description: '주간 용돈 입금', amount: 10000, date: Date.now() - 604800000 },
     { id: 't2', type: 'purchase', description: '문구 세트 구매', amount: -5000, date: Date.now() - 259200000 },
     { id: 't3', type: 'allowance', description: '주간 용돈 입금', amount: 10000, date: Date.now() - 86400000 },
   ],
 };
 
-// localStorage에서 데이터 로드
+// ────────────────────────────────────────
+// localStorage 저장 / 로드
+// ────────────────────────────────────────
 function loadState() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      return JSON.parse(saved);
+      const parsed = JSON.parse(saved);
+      return {
+        ...defaultState,
+        ...parsed,
+        currentWeek: parsed.currentWeek ?? defaultState.currentWeek,
+      };
     }
   } catch (e) {
     console.error('localStorage 로드 실패:', e);
@@ -37,7 +58,6 @@ function loadState() {
   return defaultState;
 }
 
-// localStorage에 데이터 저장
 function saveState(state) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -46,15 +66,20 @@ function saveState(state) {
   }
 }
 
+// ────────────────────────────────────────
 // 리듀서
+// ────────────────────────────────────────
 function appReducer(state, action) {
   switch (action.type) {
+
+    // ─── 모드 전환 ───
     case 'TOGGLE_MODE':
       return { ...state, mode: state.mode === 'child' ? 'parent' : 'child' };
 
     case 'SET_MODE':
       return { ...state, mode: action.payload };
 
+    // ─── 위시리스트 관리 ───
     case 'ADD_ITEM': {
       const newItem = {
         id: `item-${Date.now()}`,
@@ -69,6 +94,7 @@ function appReducer(state, action) {
     case 'DELETE_ITEM':
       return { ...state, items: state.items.filter(item => item.id !== action.payload) };
 
+    // ─── 즉시 구매 (잔액 충분 시) ───
     case 'PURCHASE_ITEM': {
       const item = state.items.find(i => i.id === action.payload);
       if (!item || state.balance < item.price) return state;
@@ -87,54 +113,205 @@ function appReducer(state, action) {
       };
     }
 
-    case 'REQUEST_ADVANCE': {
-      const newRequest = {
+    // ─── 신규 요청 (buy / loan) ───
+    case 'CREATE_REQUEST': {
+      const { type, targetId, name, price, installmentWeeks, reason } = action.payload;
+      const totalRepayment = Math.ceil(price * 1.1); // 이자 10%
+      const weeklyPrice = Math.ceil(totalRepayment / installmentWeeks);
+
+      // DSR 체크
+      if (checkDSRExceeded(state.requests, state.weeklyAllowance, weeklyPrice)) {
+        return state;
+      }
+
+      const newReq = {
         id: `req-${Date.now()}`,
-        itemName: action.payload.itemName,
-        itemPrice: action.payload.itemPrice,
-        shortfall: action.payload.shortfall,
+        type,
+        targetId: targetId || null,
+        name,
+        price,
+        totalRepayment,
+        installmentWeeks,
+        weeklyPrice,
+        repaidWeeks: 0,
         status: 'pending',
+        reason: reason || '',
+        parentMessage: '',
         createdAt: Date.now(),
       };
-      return { ...state, requests: [newRequest, ...state.requests] };
+
+      return { ...state, requests: [newReq, ...state.requests] };
     }
 
+    // ─── 부모: 승인 ───
     case 'APPROVE_REQUEST': {
-      const request = state.requests.find(r => r.id === action.payload);
-      if (!request || request.status !== 'pending') return state;
-      const tx = {
-        id: `t-${Date.now()}`,
-        type: 'advance',
-        description: `[가불 승인] ${request.itemName}`,
-        amount: request.shortfall,
-        date: Date.now(),
-      };
-      const deductionTx = {
-        id: `t-${Date.now()}-d`,
-        type: 'deduction',
-        description: `[미래 용돈 차감 예정] ${request.itemName}`,
-        amount: -request.shortfall,
-        date: Date.now(),
-      };
+      const { requestId, message } = action.payload;
+      const req = state.requests.find(r => r.id === requestId);
+      if (!req || (req.status !== 'pending' && req.status !== 'hold')) return state;
+
+      // DSR 재검증 (안전장치)
+      if (checkDSRExceeded(state.requests, state.weeklyAllowance, req.weeklyPrice)) {
+        return state;
+      }
+
+      let newBalance = state.balance;
+      const newTxs = [];
+
+      if (req.type === 'loan') {
+        newBalance += req.price;
+        newTxs.push({
+          id: `t-${Date.now()}`,
+          type: 'advance',
+          description: `[대출 승인] ${req.name}`,
+          amount: req.price,
+          date: Date.now(),
+        });
+      } else {
+        newTxs.push({
+          id: `t-${Date.now()}`,
+          type: 'advance',
+          description: `[할부 구매 승인] ${req.name}`,
+          amount: 0,
+          date: Date.now(),
+        });
+      }
+
       return {
         ...state,
-        balance: state.balance + request.shortfall,
-        futureDeductions: state.futureDeductions + request.shortfall,
+        balance: newBalance,
+        items: req.targetId
+          ? state.items.filter(i => i.id !== req.targetId)
+          : state.items,
         requests: state.requests.map(r =>
-          r.id === action.payload ? { ...r, status: 'approved' } : r
+          r.id === requestId
+            ? { ...r, status: 'approved', parentMessage: message || '' }
+            : r
         ),
-        transactions: [deductionTx, tx, ...state.transactions],
+        transactions: [...newTxs, ...state.transactions],
       };
     }
 
-    case 'REJECT_REQUEST':
+    // ─── 부모: 거절 ───
+    case 'REJECT_REQUEST': {
+      const { requestId, message } = action.payload;
       return {
         ...state,
         requests: state.requests.map(r =>
-          r.id === action.payload ? { ...r, status: 'rejected' } : r
+          r.id === requestId
+            ? { ...r, status: 'rejected', parentMessage: message || '' }
+            : r
         ),
       };
+    }
 
+    // ─── 부모: 보류 ───
+    case 'HOLD_REQUEST': {
+      const { requestId, message } = action.payload;
+      return {
+        ...state,
+        requests: state.requests.map(r =>
+          r.id === requestId
+            ? { ...r, status: 'hold', parentMessage: message || '' }
+            : r
+        ),
+      };
+    }
+
+    // ─── 부모: 선물 ───
+    case 'GIFT_REQUEST': {
+      const { requestId, message } = action.payload;
+      const req = state.requests.find(r => r.id === requestId);
+      if (!req || (req.status !== 'pending' && req.status !== 'hold')) return state;
+
+      const giftTx = {
+        id: `t-${Date.now()}`,
+        type: 'gift',
+        description: `[선물] ${req.name} — 부모님이 사주셨어요!`,
+        amount: 0,
+        date: Date.now(),
+      };
+
+      return {
+        ...state,
+        items: req.targetId
+          ? state.items.filter(i => i.id !== req.targetId)
+          : state.items,
+        requests: state.requests.map(r =>
+          r.id === requestId
+            ? { ...r, status: 'completed', repaidWeeks: r.installmentWeeks, parentMessage: message || '사랑하는 우리 아이에게 선물!' }
+            : r
+        ),
+        transactions: [giftTx, ...state.transactions],
+      };
+    }
+
+    // ─── 1주일 지나기 (시간 흐름) ───
+    case 'ADVANCE_WEEK': {
+      const nextWeek = state.currentWeek + 1;
+
+      // 이번 주 갚아야 할 할부금 총액 (상환 전 기준, approved인 것만)
+      const weeklyDeduction = state.requests
+        .filter(r => r.status === 'approved')
+        .reduce((sum, r) => sum + r.weeklyPrice, 0);
+
+      // 자동 상환 처리
+      const updatedRequests = state.requests.map(r => {
+        if (r.status !== 'approved') return r;
+        const newRepaid = r.repaidWeeks + 1;
+        return {
+          ...r,
+          repaidWeeks: newRepaid,
+          status: newRepaid >= r.installmentWeeks ? 'completed' : 'approved',
+        };
+      });
+
+      // 실지급액 = 주간 용돈 - 할부금 (최소 0원)
+      const netAllowance = Math.max(0, state.weeklyAllowance - weeklyDeduction);
+
+      const txs = [];
+      if (weeklyDeduction > 0) {
+        txs.push({
+          id: `t-${Date.now()}-repay`,
+          type: 'deduction',
+          description: `[${nextWeek}주차] 할부금 자동 상환`,
+          amount: -weeklyDeduction,
+          date: Date.now(),
+        });
+      }
+      txs.push({
+        id: `t-${Date.now()}-allow`,
+        type: 'allowance',
+        description: `[${nextWeek}주차] 주간 용돈 입금${weeklyDeduction > 0 ? ' (할부 차감 후)' : ''}`,
+        amount: netAllowance,
+        date: Date.now(),
+      });
+
+      // 완료된 건들 알림
+      updatedRequests.forEach(r => {
+        if (r.status === 'completed') {
+          const prev = state.requests.find(o => o.id === r.id);
+          if (prev && prev.status === 'approved') {
+            txs.push({
+              id: `t-${Date.now()}-done-${r.id}`,
+              type: 'info',
+              description: `✅ [상환 완료] ${r.name}`,
+              amount: 0,
+              date: Date.now(),
+            });
+          }
+        }
+      });
+
+      return {
+        ...state,
+        currentWeek: nextWeek,
+        balance: state.balance + netAllowance,
+        requests: updatedRequests,
+        transactions: [...txs, ...state.transactions],
+      };
+    }
+
+    // ─── 용돈 직접 입금 (부모) ───
     case 'ADD_ALLOWANCE': {
       const tx = {
         id: `t-${Date.now()}`,
@@ -150,6 +327,11 @@ function appReducer(state, action) {
       };
     }
 
+    // ─── 주간 용돈 금액 변경 ───
+    case 'SET_WEEKLY_ALLOWANCE':
+      return { ...state, weeklyAllowance: action.payload };
+
+    // ─── 초기화 ───
     case 'RESET_DATA':
       return { ...defaultState };
 
@@ -158,17 +340,29 @@ function appReducer(state, action) {
   }
 }
 
-// Provider 컴포넌트
+// ────────────────────────────────────────
+// Provider
+// ────────────────────────────────────────
 export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(appReducer, null, loadState);
 
-  // 상태가 변경될 때마다 localStorage에 자동 저장
   useEffect(() => {
     saveState(state);
   }, [state]);
 
+  // 파생 데이터를 계산해서 함께 전달
+  const creditLimit = getCreditLimit(state.weeklyAllowance);
+  const futureDeductions = calcFutureDeductions(state.requests);
+  const currentWeeklyRepayment = getCurrentWeeklyRepayment(state.requests);
+
   return (
-    <AppContext.Provider value={{ state, dispatch }}>
+    <AppContext.Provider value={{
+      state: { ...state, futureDeductions, creditLimit },
+      dispatch,
+      creditLimit,
+      futureDeductions,
+      currentWeeklyRepayment,
+    }}>
       {children}
     </AppContext.Provider>
   );
