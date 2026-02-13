@@ -29,19 +29,13 @@ export default function Header() {
         {/* 모드 토글 */}
         <button
           onClick={() => dispatch({ type: 'TOGGLE_MODE' })}
-          className={`relative flex items-center rounded-full p-1 w-[140px] h-[38px] transition-all duration-300 ${
-            isChild
-              ? 'bg-white/20 hover:bg-white/30'
-              : 'bg-white/20 hover:bg-white/30'
-          }`}
+          className="relative flex items-center rounded-full p-1 w-[140px] h-[38px] transition-all duration-300 bg-white/20 hover:bg-white/30"
         >
-          {/* 슬라이더 */}
           <div
             className={`absolute h-[30px] w-[66px] rounded-full bg-white shadow-md transition-all duration-300 ease-in-out ${
               isChild ? 'left-1' : 'left-[70px]'
             }`}
           />
-          {/* 자녀 라벨 */}
           <span
             className={`relative z-10 flex-1 text-center text-xs font-bold transition-colors duration-300 ${
               isChild ? 'text-child-600' : 'text-white/80'
@@ -49,7 +43,6 @@ export default function Header() {
           >
             👦 자녀
           </span>
-          {/* 부모 라벨 */}
           <span
             className={`relative z-10 flex-1 text-center text-xs font-bold transition-colors duration-300 ${
               !isChild ? 'text-parent-600' : 'text-white/80'
@@ -60,15 +53,20 @@ export default function Header() {
         </button>
       </div>
 
-      {/* 현재 모드 표시 바 */}
+      {/* 하단 정보 바 */}
       <div
-        className={`text-center py-1 text-[11px] font-semibold theme-transition ${
+        className={`flex items-center justify-between px-4 py-1.5 text-[11px] font-semibold theme-transition ${
           isChild
             ? 'bg-child-600/30 text-white'
             : 'bg-parent-700/30 text-white'
         }`}
       >
-        {isChild ? '🎒 자녀 모드로 보고 있어요' : '📋 부모 모드로 관리 중이에요'}
+        <span>
+          {isChild ? '🎒 자녀 모드로 보고 있어요' : '📋 부모 모드로 관리 중이에요'}
+        </span>
+        <span className="bg-white/20 px-2 py-0.5 rounded-full text-[10px]">
+          📅 {state.currentWeek}주차
+        </span>
       </div>
     </header>
   );
