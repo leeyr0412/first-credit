@@ -31,9 +31,19 @@ export default function ChildView() {
   const [reqWeeks, setReqWeeks] = useState(4);
   const [reqReason, setReqReason] = useState('');
 
+  const [showCancelConfirm, setShowCancelConfirm] = useState(null); // request id
+
   const pendingRequests = state.requests.filter(r => r.status === 'pending').length;
   const activeContracts = state.requests.filter(r => r.status === 'approved');
-  const myRequests = state.requests.filter(r => r.status !== 'completed');
+  const myRequests = state.requests.filter(r => !['completed', 'cancelled'].includes(r.status));
+
+  // 부모 응답 알림: 최근 승인/거절/선물 중 아직 읽지 않은 것
+  const notifications = state.requests.filter(r =>
+    ['approved', 'rejected', 'completed'].includes(r.status) &&
+    !r.notificationRead &&
+    // completed는 선물(gift)로 완료된 것만 알림 (상환 완료는 제외)
+    (r.status !== 'completed' || r.repaidWeeks === r.installmentWeeks)
+  );
 
   // ─── 유틸 ───
   function showToast(msg) {
@@ -304,14 +314,68 @@ export default function ChildView() {
       {/* ═══════ 빌린 목록 탭 ═══════ */}
       {activeTab === 'contracts' && (
         <div className="!mx-4 !mt-4 space-y-3">
-          {myRequests.length === 0 && (
+          {myRequests.length === 0 && notifications.length === 0 && (
             <div className="text-center py-10 text-child-400">
               <p className="text-4xl !mb-2">📄</p>
               <p className="font-semibold">아직 신청 내역이 없어요</p>
             </div>
           )}
 
-          {/* 상환 중인 계약 */}
+          {/* ── 부모 응답 알림 배너 ── */}
+          {notifications.length > 0 && (
+            <div className="space-y-2">
+              {notifications.map(req => {
+                const isApproved = req.status === 'approved';
+                const isGifted = req.status === 'completed' && req.repaidWeeks === req.installmentWeeks && req.parentMessage;
+                return (
+                  <div
+                    key={`notif-${req.id}`}
+                    className={`rounded-2xl p-4 overflow-hidden card-enter border-2 ${
+                      isGifted ? 'bg-gradient-to-br from-pink-50 to-purple-50 border-pink-200'
+                      : isApproved ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-200'
+                      : 'bg-gradient-to-br from-orange-50 to-red-50 border-orange-200'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl shrink-0">
+                        {isGifted ? '🎁' : isApproved ? '🎉' : '📝'}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-extrabold ${
+                          isGifted ? 'text-pink-700'
+                          : isApproved ? 'text-green-700'
+                          : 'text-orange-700'
+                        }`}>
+                          {isGifted
+                            ? `와! '${req.name}' 부모님이 선물로 사주셨어요! 💕`
+                            : isApproved
+                            ? `축하해요! '${req.name}' 요청이 승인되었어요! 🎉`
+                            : `아쉽지만 '${req.name}' 요청이 거절되었어요. 사유를 확인해 보세요. 📝`}
+                        </p>
+                        {req.parentMessage && (
+                          <p className="text-xs text-gray-600 mt-1 italic break-words">
+                            💬 부모님: &quot;{req.parentMessage}&quot;
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => dispatch({ type: 'DISMISS_NOTIFICATION', payload: req.id })}
+                      className={`mt-2 w-full py-1.5 rounded-xl text-xs font-bold transition-colors ${
+                        isGifted ? 'bg-pink-100 text-pink-600 hover:bg-pink-200'
+                        : isApproved ? 'bg-green-100 text-green-600 hover:bg-green-200'
+                        : 'bg-orange-100 text-orange-600 hover:bg-orange-200'
+                      }`}
+                    >
+                      확인했어요 ✓
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ── 상환 중인 계약 ── */}
           {activeContracts.length > 0 && (
             <div>
               <h3 className="text-xs font-bold text-child-600 uppercase tracking-wider !mb-2 flex items-center gap-1">
@@ -346,7 +410,6 @@ export default function ChildView() {
                         <span className="font-bold">{req.repaidWeeks} / {req.installmentWeeks}주</span>
                       </div>
                     </div>
-                    {/* 프로그레스 바 */}
                     <div className="mt-3">
                       <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
                         <div
@@ -362,33 +425,93 @@ export default function ChildView() {
             </div>
           )}
 
-          {/* 대기/보류/거절 */}
-          {state.requests.filter(r => ['pending', 'hold', 'rejected'].includes(r.status)).length > 0 && (
+          {/* ── 대기 중 (pending) ── */}
+          {state.requests.filter(r => r.status === 'pending').length > 0 && (
             <div>
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">📬 요청 현황</h3>
-              {state.requests
-                .filter(r => ['pending', 'hold', 'rejected'].includes(r.status))
-                .map(req => (
-                  <div key={req.id} className="bg-white rounded-xl !p-4 flex items-center gap-3 border border-gray-100 mb-2 overflow-hidden">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0 ${
-                      req.status === 'pending' ? 'bg-orange-100 text-orange-600'
-                      : req.status === 'hold' ? 'bg-yellow-100 text-yellow-600'
-                      : 'bg-red-100 text-red-500'
-                    }`}>
-                      {req.status === 'pending' ? '⏳' : req.status === 'hold' ? '🤔' : '❌'}
-                    </div>
+              <h3 className="text-xs font-bold text-orange-500 uppercase tracking-wider mb-2">⏳ 승인 대기 중</h3>
+              {state.requests.filter(r => r.status === 'pending').map(req => (
+                <div key={req.id} className="bg-white rounded-2xl p-4 border-2 border-orange-100 mb-2 overflow-hidden card-enter">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center text-lg shrink-0">⏳</div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-700 truncate">{req.name}</p>
-                      <p className="text-[11px] text-gray-400 truncate">
-                        {formatMoney(req.price)}원 · {req.installmentWeeks}주 할부 ·{' '}
-                        {req.status === 'pending' ? '심사 대기 중' : req.status === 'hold' ? '보류됨' : '거절됨'}
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <p className="text-sm font-bold text-gray-800 truncate">{req.name}</p>
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0 whitespace-nowrap ${
+                          req.type === 'loan' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'
+                        }`}>{req.type === 'loan' ? '대출' : '할부'}</span>
+                      </div>
+                      <span className="inline-block bg-orange-100 text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded-full mb-1">
+                        ⏳ 승인 대기 중
+                      </span>
+                      <p className="text-[11px] text-gray-400">
+                        {formatMoney(req.price)}원 · {req.installmentWeeks}주 할부 · 주당 -{formatMoney(req.weeklyPrice)}원
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowCancelConfirm(req.id)}
+                    className="mt-3 w-full py-2 bg-gray-100 text-gray-500 rounded-xl text-xs font-bold hover:bg-red-50 hover:text-red-500 transition-colors"
+                  >
+                    요청 취소하기
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── 보류 중 (hold) ── */}
+          {state.requests.filter(r => r.status === 'hold').length > 0 && (
+            <div>
+              <h3 className="text-xs font-bold text-yellow-600 uppercase tracking-wider mb-2">✋ 보류됨</h3>
+              {state.requests.filter(r => r.status === 'hold').map(req => (
+                <div key={req.id} className="bg-white rounded-2xl p-4 border-2 border-yellow-200 mb-2 overflow-hidden card-enter">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-yellow-100 rounded-xl flex items-center justify-center text-lg shrink-0">✋</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <p className="text-sm font-bold text-gray-800 truncate">{req.name}</p>
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0 whitespace-nowrap ${
+                          req.type === 'loan' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'
+                        }`}>{req.type === 'loan' ? '대출' : '할부'}</span>
+                      </div>
+                      <span className="inline-block bg-yellow-100 text-yellow-700 text-[10px] font-bold px-2 py-0.5 rounded-full mb-1">
+                        ✋ 보류됨 (부모님 검토 중)
+                      </span>
+                      <p className="text-[11px] text-gray-400">
+                        {formatMoney(req.price)}원 · {req.installmentWeeks}주 할부 · 주당 -{formatMoney(req.weeklyPrice)}원
                       </p>
                       {req.parentMessage && (
-                        <p className="text-[11px] text-blue-500 mt-0.5 truncate">💬 &quot;{req.parentMessage}&quot;</p>
+                        <p className="text-[11px] text-yellow-600 mt-1 break-words">💬 &quot;{req.parentMessage}&quot;</p>
                       )}
                     </div>
                   </div>
-                ))}
+                  <button
+                    onClick={() => setShowCancelConfirm(req.id)}
+                    className="mt-3 w-full py-2 bg-gray-100 text-gray-500 rounded-xl text-xs font-bold hover:bg-red-50 hover:text-red-500 transition-colors"
+                  >
+                    요청 취소하기
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── 거절됨 (rejected) ── */}
+          {state.requests.filter(r => r.status === 'rejected' && r.notificationRead).length > 0 && (
+            <div>
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">거절된 요청</h3>
+              {state.requests.filter(r => r.status === 'rejected' && r.notificationRead).map(req => (
+                <div key={req.id} className="bg-gray-50 rounded-xl p-3 flex items-center gap-3 border border-gray-200 mb-2 overflow-hidden">
+                  <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center text-sm shrink-0">❌</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-500 truncate">{req.name}</p>
+                    <p className="text-[11px] text-gray-400 truncate">{formatMoney(req.price)}원 · 거절됨</p>
+                    {req.parentMessage && (
+                      <p className="text-[11px] text-gray-500 mt-0.5 truncate">💬 &quot;{req.parentMessage}&quot;</p>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -662,6 +785,43 @@ export default function ChildView() {
                 부모님께 요청 보내기 📨
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════ 요청 취소 확인 모달 ═══════ */}
+      {showCancelConfirm && (
+        <div
+          className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-6 modal-overlay"
+          onClick={() => setShowCancelConfirm(null)}
+        >
+          <div
+            className="bg-white rounded-3xl w-full max-w-[340px] p-6 text-center modal-content overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-5xl mb-3">🤔</div>
+            <h2 className="text-lg font-extrabold text-gray-800 mb-2">요청을 취소할까요?</h2>
+            <p className="text-sm text-gray-500 mb-5">
+              취소하면 이 요청은 되돌릴 수 없어요.<br />정말 취소하시겠어요?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowCancelConfirm(null)}
+                className="flex-1 py-3 bg-gray-100 text-gray-500 rounded-2xl font-bold text-sm hover:bg-gray-200 transition-colors"
+              >
+                아니요
+              </button>
+              <button
+                onClick={() => {
+                  dispatch({ type: 'CANCEL_REQUEST', payload: showCancelConfirm });
+                  setShowCancelConfirm(null);
+                  showToast('요청을 취소했어요');
+                }}
+                className="flex-1 py-3 bg-red-500 text-white rounded-2xl font-bold text-sm hover:bg-red-600 transition-colors shadow-lg shadow-red-200"
+              >
+                취소하기
+              </button>
+            </div>
           </div>
         </div>
       )}

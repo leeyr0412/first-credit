@@ -217,6 +217,30 @@ function appReducer(state, action) {
       };
     }
 
+    // ─── 자녀: 요청 취소 ───
+    case 'CANCEL_REQUEST': {
+      const cancelId = action.payload;
+      const cancelReq = state.requests.find(r => r.id === cancelId);
+      if (!cancelReq || (cancelReq.status !== 'pending' && cancelReq.status !== 'hold')) return state;
+      return {
+        ...state,
+        requests: state.requests.map(r =>
+          r.id === cancelId ? { ...r, status: 'cancelled' } : r
+        ),
+      };
+    }
+
+    // ─── 자녀: 알림 확인 (읽음 처리) ───
+    case 'DISMISS_NOTIFICATION': {
+      const dismissId = action.payload;
+      return {
+        ...state,
+        requests: state.requests.map(r =>
+          r.id === dismissId ? { ...r, notificationRead: true } : r
+        ),
+      };
+    }
+
     // ─── 부모: 선물 ───
     case 'GIFT_REQUEST': {
       const { requestId, message } = action.payload;
