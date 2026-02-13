@@ -21,7 +21,7 @@ export default function TermBadge({ termKey, variant = 'child' }) {
       <button
         type="button"
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShow(true); }}
-        className={`inline-flex items-center justify-center w-5 h-5 text-[11px] rounded-full transition-colors ml-1 cursor-pointer shrink-0 ${
+        className={`ml-1 inline-flex items-center justify-center w-5 h-5 text-[11px] rounded-full transition-colors ml-1 cursor-pointer shrink-0 ${
           isParent
             ? 'bg-parent-200 text-parent-600 hover:bg-parent-300'
             : 'bg-child-200 text-child-600 hover:bg-child-300'

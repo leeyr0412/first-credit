@@ -142,19 +142,19 @@ export default function ChildView() {
       )}
 
       {/* ─── 잔액 카드 ─── */}
-      <div className="mx-4 mt-4">
-        <div className="bg-gradient-to-br from-child-400 to-child-500 rounded-2xl p-5 shadow-lg shadow-child-200 overflow-hidden">
+      <div className="mx-4 mt-4 !p-1">
+        <div className=" bg-gradient-to-br from-child-400 to-child-500 rounded-2xl !p-2 shadow-lg shadow-child-200 overflow-hidden">
           <p className="text-white/80 text-xs font-medium mb-1">내 용돈 잔액</p>
           <p className="text-white text-3xl font-extrabold tracking-tight">
             {formatMoney(state.balance)}
             <span className="text-lg font-bold ml-0.5">원</span>
           </p>
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <div className="bg-white/20 rounded-xl px-3 py-2 overflow-hidden">
+            <div className="bg-white/20 rounded-xl !px-3 !py-2 overflow-hidden">
               <p className="text-white/70 text-[10px]">주간 용돈</p>
               <p className="text-white text-sm font-bold">{formatMoney(state.weeklyAllowance)}원</p>
             </div>
-            <div className="bg-white/20 rounded-xl px-3 py-2 overflow-hidden">
+            <div className="bg-white/20 rounded-xl !px-3 !py-2 overflow-hidden">
               <p className="text-white/70 text-[10px] flex items-center">
                 신용 한도
                 <TermBadge termKey="LIMIT" />
@@ -162,13 +162,13 @@ export default function ChildView() {
               <p className="text-white text-sm font-bold">{formatMoney(creditLimit)}원</p>
             </div>
             {state.futureDeductions > 0 && (
-              <div className="bg-red-500/30 rounded-xl px-3 py-2 overflow-hidden">
+              <div className="bg-red-500/30 rounded-xl !px-3 !py-2 overflow-hidden">
                 <p className="text-white/70 text-[10px]">남은 상환액</p>
                 <p className="text-white text-sm font-bold">-{formatMoney(state.futureDeductions)}원</p>
               </div>
             )}
             {currentWeeklyRepayment > 0 && (
-              <div className="bg-orange-500/30 rounded-xl px-3 py-2 overflow-hidden">
+              <div className="bg-orange-500/30 rounded-xl !px-3 !py-2 overflow-hidden">
                 <p className="text-white/70 text-[10px] flex items-center">
                   매주 갚는 금액
                   <TermBadge termKey="INSTALLMENT" />
@@ -181,7 +181,7 @@ export default function ChildView() {
 
           {/* DSR 현황 */}
           {currentWeeklyRepayment > 0 && (
-            <div className="mt-3 bg-white/15 rounded-xl px-3 py-2 overflow-hidden">
+            <div className="!mt-2 bg-white/15 rounded-xl !px-3 !py-2 overflow-hidden">
               <div className="flex items-center justify-between text-[10px] text-white/70 mb-1">
                 <span className="flex items-center gap-0.5">
                   DSR 현황
@@ -201,7 +201,7 @@ export default function ChildView() {
           )}
 
           {pendingRequests > 0 && (
-            <div className="mt-3 bg-white/20 rounded-lg px-3 py-2 text-white text-xs overflow-hidden">
+            <div className="!mt-2 bg-white/20 rounded-lg !px-3 !py-2 text-white text-xs overflow-hidden">
               📨 대기 중인 요청이 <span className="font-bold">{pendingRequests}건</span> 있어요
             </div>
           )}
@@ -209,7 +209,7 @@ export default function ChildView() {
           {/* 대출 신청 버튼 */}
           <button
             onClick={openLoanModal}
-            className="mt-3 w-full bg-white/20 hover:bg-white/30 text-white py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-1.5"
+            className="!mt-3 w-full bg-white/20 hover:bg-white/30 text-white !py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-1.5"
           >
             💰 용돈 미리 받기 (대출)
             <TermBadge termKey="LOAN" />
@@ -218,10 +218,10 @@ export default function ChildView() {
       </div>
 
       {/* ─── 탭 전환 ─── */}
-      <div className="mx-4 mt-5 flex bg-child-100 rounded-xl p-1 overflow-hidden">
+      <div className="mx-4 mt-5 flex bg-child-100 rounded-xl !p-1 overflow-hidden">
         {[
           { key: 'items', label: '🛍️ 위시리스트' },
-          { key: 'contracts', label: '📄 내 계약' },
+          { key: 'contracts', label: '📄 빌린 목록' },
           { key: 'history', label: '📋 내역' },
         ].map(tab => (
           <button
@@ -240,7 +240,7 @@ export default function ChildView() {
 
       {/* ═══════ 위시리스트 탭 ═══════ */}
       {activeTab === 'items' && (
-        <div className="mx-4 mt-4">
+        <div className="mx-4 mt-4 !p-1">
           <button
             onClick={() => setShowAddItem(true)}
             className="w-full border-2 border-dashed border-child-300 rounded-2xl py-4 text-child-500 font-bold text-sm hover:bg-child-100 transition-colors flex items-center justify-center gap-2"
@@ -253,7 +253,7 @@ export default function ChildView() {
               <div className="text-center py-10 text-child-400">
                 <p className="text-4xl mb-2">🎁</p>
                 <p className="font-semibold">아직 위시리스트가 비어있어요</p>
-                <p className="text-xs mt-1">갖고 싶은 것을 추가해보세요!</p>
+                <p className="text-xs !mt-1">갖고 싶은 것을 추가해보세요!</p>
               </div>
             )}
             {state.items.map((item) => (
@@ -267,7 +267,7 @@ export default function ChildView() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-bold text-gray-800 text-sm truncate">{item.name}</h3>
-                    <p className="text-child-600 font-extrabold text-lg mt-0.5">
+                    <p className="text-child-600 font-extrabold text-lg !mt-0.5">
                       {formatMoney(item.price)}원
                     </p>
                     {state.balance < item.price && (
@@ -276,10 +276,10 @@ export default function ChildView() {
                       </p>
                     )}
                   </div>
-                  <div className="flex flex-col gap-1.5 shrink-0">
+                  <div className="flex flex-col !gap-1.5 shrink-0">
                     <button
                       onClick={() => handleBuy(item)}
-                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                      className={`!px-4 !py-2 rounded-xl text-xs font-bold transition-all ${
                         state.balance >= item.price
                           ? 'bg-child-500 text-white hover:bg-child-600 shadow-sm shadow-child-200'
                           : 'bg-orange-500 text-white hover:bg-orange-600 shadow-sm shadow-orange-200'
@@ -289,7 +289,7 @@ export default function ChildView() {
                     </button>
                     <button
                       onClick={() => dispatch({ type: 'DELETE_ITEM', payload: item.id })}
-                      className="px-4 py-1.5 rounded-xl text-[11px] text-gray-400 hover:text-red-400 hover:bg-red-50 transition-colors"
+                      className="!px-4 !py-1.5 rounded-xl text-[11px] text-gray-400 hover:text-red-400 hover:bg-red-50 transition-colors"
                     >
                       삭제
                     </button>
@@ -301,12 +301,12 @@ export default function ChildView() {
         </div>
       )}
 
-      {/* ═══════ 내 계약 탭 ═══════ */}
+      {/* ═══════ 빌린 목록 탭 ═══════ */}
       {activeTab === 'contracts' && (
-        <div className="mx-4 mt-4 space-y-3">
+        <div className="!mx-4 !mt-4 space-y-3">
           {myRequests.length === 0 && (
             <div className="text-center py-10 text-child-400">
-              <p className="text-4xl mb-2">📄</p>
+              <p className="text-4xl !mb-2">📄</p>
               <p className="font-semibold">아직 신청 내역이 없어요</p>
             </div>
           )}
@@ -314,21 +314,21 @@ export default function ChildView() {
           {/* 상환 중인 계약 */}
           {activeContracts.length > 0 && (
             <div>
-              <h3 className="text-xs font-bold text-child-600 uppercase tracking-wider mb-2 flex items-center gap-1">
+              <h3 className="text-xs font-bold text-child-600 uppercase tracking-wider !mb-2 flex items-center gap-1">
                 🔄 상환 중인 할부
                 <TermBadge termKey="INSTALLMENT" />
               </h3>
               {activeContracts.map(req => {
                 const progress = Math.round((req.repaidWeeks / req.installmentWeeks) * 100);
                 return (
-                  <div key={req.id} className="bg-white rounded-2xl p-4 shadow-sm border border-blue-100 mb-3 card-enter overflow-hidden">
-                    <div className="flex items-center justify-between mb-2 gap-2">
+                  <div key={req.id} className="bg-white rounded-2xl p-4 shadow-sm border border-blue-100 !mb-3 card-enter overflow-hidden">
+                    <div className="flex items-center justify-between !mb-2 !gap-2">
                       <h4 className="font-bold text-gray-800 text-sm truncate min-w-0 flex-1">{req.name}</h4>
-                      <span className="bg-blue-100 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap">
+                      <span className="bg-blue-100 text-blue-600 text-[10px] font-bold !px-2 !py-0.5 rounded-full shrink-0 whitespace-nowrap">
                         {req.type === 'loan' ? '대출' : '할부 구매'}
                       </span>
                     </div>
-                    <div className="bg-gray-50 rounded-xl p-3 space-y-1.5 text-xs overflow-hidden">
+                    <div className="bg-gray-50 rounded-xl !p-3 space-y-1.5 text-xs overflow-hidden">
                       <div className="flex justify-between">
                         <span className="text-gray-500">원금</span>
                         <span className="font-bold">{formatMoney(req.price)}원</span>
@@ -354,7 +354,7 @@ export default function ChildView() {
                           style={{ width: `${progress}%` }}
                         />
                       </div>
-                      <p className="text-[10px] text-gray-400 mt-1 text-right">{progress}% 상환 완료</p>
+                      <p className="text-[10px] text-gray-400 !mr-1 !mt-1 text-right">{progress}% 상환 완료</p>
                     </div>
                   </div>
                 );
@@ -369,7 +369,7 @@ export default function ChildView() {
               {state.requests
                 .filter(r => ['pending', 'hold', 'rejected'].includes(r.status))
                 .map(req => (
-                  <div key={req.id} className="bg-white rounded-xl p-4 flex items-center gap-3 border border-gray-100 mb-2 overflow-hidden">
+                  <div key={req.id} className="bg-white rounded-xl !p-4 flex items-center gap-3 border border-gray-100 mb-2 overflow-hidden">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0 ${
                       req.status === 'pending' ? 'bg-orange-100 text-orange-600'
                       : req.status === 'hold' ? 'bg-yellow-100 text-yellow-600'
@@ -406,7 +406,7 @@ export default function ChildView() {
           {state.transactions.map((tx) => (
             <div
               key={tx.id}
-              className="bg-white rounded-xl p-4 flex items-center gap-3 border border-child-100 overflow-hidden"
+              className="bg-white rounded-xl !p-4 flex items-center gap-3 border border-child-100 overflow-hidden"
             >
               <div
                 className={`w-9 h-9 rounded-full flex items-center justify-center text-sm shrink-0 ${
@@ -617,7 +617,7 @@ export default function ChildView() {
                     <span className="text-gray-600 font-bold">총 상환액</span>
                     <span className="font-extrabold text-orange-600">{formatMoney(totalRepayment)}원</span>
                   </div>
-                  <div className="bg-white rounded-xl px-3 py-2 flex justify-between items-center overflow-hidden">
+                  <div className="bg-white rounded-xl !px-3 !py-2 flex justify-between items-center overflow-hidden">
                     <span className="text-xs text-gray-500">매주 갚는 금액</span>
                     <span className="text-lg font-extrabold text-red-500">-{formatMoney(weeklyPayment)}원</span>
                   </div>
