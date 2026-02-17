@@ -104,7 +104,7 @@ export default function ParentView() {
       )}
 
       {/* ═══════ 대시보드 카드 ═══════ */}
-      <div className="mx-4 mt-4">
+      <div className="mx-4 mt-4 !p-1">
         <div className="bg-gradient-to-br from-parent-500 to-parent-600 rounded-xl p-5 shadow-lg shadow-parent-200 overflow-hidden">
           <div className="flex items-center justify-between mb-1">
             <p className="text-white/70 text-xs font-medium ml-1">자녀 잔액 현황</p>
@@ -118,24 +118,24 @@ export default function ParentView() {
           </p>
 
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <div className="bg-white/20 rounded-xl px-3 py-2 overflow-hidden">
+            <div className="bg-white/20 rounded-xl !px-3 !py-2 overflow-hidden">
               <p className="text-white/70 text-[10px]">주간 용돈</p>
               <p className="text-white text-sm font-bold">{formatMoney(state.weeklyAllowance)}원</p>
             </div>
-            <div className="bg-white/20 rounded-xl px-3 py-2 overflow-hidden">
+            <div className="bg-white/20 rounded-xl !px-3 !py-2 overflow-hidden">
               <p className="text-white/70 text-[10px] flex items-center">
                 신용 한도
                 {/*<TermBadge termKey="LIMIT" variant="parent" />*/}
               </p>
               <p className="text-white text-sm font-bold">{formatMoney(creditLimit)}원</p>
             </div>
-            <div className={`rounded-xl px-3 py-2 overflow-hidden ${futureDeductions > 0 ? 'bg-red-500/30' : 'bg-white/20'}`}>
+            <div className={`rounded-xl !px-3 !py-2 overflow-hidden ${futureDeductions > 0 ? 'bg-red-500/30' : 'bg-white/20'}`}>
               <p className="text-white/70 text-[10px]">남은 총 상환액</p>
               <p className="text-white text-sm font-bold">
                 {futureDeductions > 0 ? '-' : ''}{formatMoney(futureDeductions)}원
               </p>
             </div>
-            <div className={`rounded-xl px-3 py-2 overflow-hidden ${currentWeeklyRepayment > 0 ? 'bg-orange-500/30' : 'bg-white/20'}`}>
+            <div className={`rounded-xl !px-3 !py-2 overflow-hidden ${currentWeeklyRepayment > 0 ? 'bg-orange-500/30' : 'bg-white/20'}`}>
               <p className="text-white/70 text-[10px] flex items-center">
                 매주 할부 차감
                 {/*<TermBadge termKey="INSTALLMENT" variant="parent" />*/}
@@ -148,7 +148,7 @@ export default function ParentView() {
 
           {/* DSR 현황 */}
           {currentWeeklyRepayment > 0 && (
-            <div className="mt-3 bg-white/15 rounded-xl px-3 py-2 overflow-hidden">
+            <div className="!mt-3 bg-white/15 rounded-xl !px-3 !py-2 overflow-hidden">
               <div className="flex items-center justify-between text-[10px] text-white/70 mb-1">
                 <span className="flex items-center gap-0.5">
                   DSR 현황
@@ -168,7 +168,7 @@ export default function ParentView() {
           )}
 
           {/* 버튼 그룹 */}
-          <div className="mt-3 grid grid-cols-2 gap-2">
+          <div className="!mt-3 grid grid-cols-2 gap-2">
             <button
               onClick={() => setShowWeekConfirm(true)}
               className="bg-white/30 hover:bg-white/40 text-white py-2.5 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1"
@@ -184,7 +184,7 @@ export default function ParentView() {
           </div>
           <button
             onClick={() => { setNewWeeklyAmount(String(state.weeklyAllowance)); setShowWeeklySettings(true); }}
-            className="mt-2 w-full bg-white/10 hover:bg-white/20 text-white/70 py-2 rounded-xl text-[11px] font-medium transition-colors"
+            className="!mt-2 w-full bg-white/10 hover:bg-white/20 text-white/70 py-2 rounded-xl text-[11px] font-medium transition-colors"
           >
             ⚙️ 주간 용돈 금액 설정
           </button>
@@ -193,7 +193,7 @@ export default function ParentView() {
 
       {/* 알림 배지 */}
       {pendingRequests.length > 0 && (
-        <div className="mx-4 mt-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center gap-3 card-enter overflow-hidden">
+        <div className="!mx-4 !mt-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center gap-3 card-enter overflow-hidden">
           <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0">
             {pendingRequests.length}
           </div>
@@ -205,7 +205,7 @@ export default function ParentView() {
       )}
 
       {/* ─── 탭 전환 ─── */}
-      <div className="mx-4 mt-4 flex bg-parent-100 rounded-xl p-1 overflow-hidden">
+      <div className="!mx-4 !mt-4 flex bg-parent-100 rounded-xl p-1 overflow-hidden">
         {[
           { key: 'requests', label: '📬 요청 관리', badge: pendingRequests.length + holdRequests.length },
           { key: 'contracts', label: '📄 요청/대출 현황' },
@@ -232,19 +232,19 @@ export default function ParentView() {
 
       {/* ═══════ 요청 관리 탭 ═══════ */}
       {activeTab === 'requests' && (
-        <div className="mx-4 mt-4 space-y-4">
+        <div className="!mx-4 !mt-4 space-y-4">
           {pendingRequests.length === 0 && holdRequests.length === 0 && (
             <div className="text-center py-12 text-parent-400">
               <p className="text-4xl mb-2">✅</p>
               <p className="font-semibold">처리할 요청이 없습니다</p>
-              <p className="text-xs mt-1">자녀의 할부/대출 요청이 여기에 표시됩니다</p>
+              <p className="text-xs !mt-1">자녀의 할부/대출 요청이 여기에 표시됩니다</p>
             </div>
           )}
 
           {/* 대기 중 */}
           {pendingRequests.length > 0 && (
             <div>
-              <h3 className="text-xs font-bold text-parent-500 uppercase tracking-wider mb-2">⏳ 대기 중</h3>
+              <h3 className="text-xs font-bold text-parent-500 uppercase tracking-wider !mb-2">⏳ 대기 중</h3>
               <div className="space-y-3">
                 {pendingRequests.map((req) => (
                   <RequestCard key={req.id} req={req} onDecide={() => { setShowDecisionModal(req); setParentMessage(''); }} />
@@ -256,7 +256,7 @@ export default function ParentView() {
           {/* 보류 */}
           {holdRequests.length > 0 && (
             <div>
-              <h3 className="text-xs font-bold text-yellow-600 uppercase tracking-wider mb-2 mt-4">🤔 보류 중</h3>
+              <h3 className="text-xs font-bold text-yellow-600 uppercase tracking-wider !mb-2 !mt-4">🤔 보류 중</h3>
               <div className="space-y-3">
                 {holdRequests.map((req) => (
                   <RequestCard key={req.id} req={req} onDecide={() => { setShowDecisionModal(req); setParentMessage(''); }} isHold />
@@ -267,12 +267,12 @@ export default function ParentView() {
         </div>
       )}
 
-      {/* ═══════ 계약 현황 탭 ═══════ */}
+      {/* ═══════ 요청/대출 탭 ═══════ */}
       {activeTab === 'contracts' && (
-        <div className="mx-4 mt-4 space-y-3">
+        <div className="!mx-4 !mt-4 space-y-3">
           {activeContracts.length === 0 && completedContracts.length === 0 && (
-            <div className="text-center py-12 text-parent-400">
-              <p className="text-4xl mb-2">📄</p>
+            <div className="text-center !py-12 text-parent-400">
+              <p className="text-4xl !mb-2">📄</p>
               <p className="font-semibold">계약 내역이 없습니다</p>
             </div>
           )}
@@ -284,10 +284,10 @@ export default function ParentView() {
                 const progress = Math.round((req.repaidWeeks / req.installmentWeeks) * 100);
                 const remaining = (req.installmentWeeks - req.repaidWeeks) * req.weeklyPrice;
                 return (
-                  <div key={req.id} className="bg-white rounded-2xl p-4 shadow-sm border border-parent-100 mb-3 card-enter overflow-hidden">
-                    <div className="flex items-center justify-between mb-2 gap-2">
+                  <div key={req.id} className="bg-white rounded-2xl !p-4 shadow-sm border border-parent-100 mb-3 card-enter overflow-hidden">
+                    <div className="flex items-center justify-between !mb-2 gap-2">
                       <h4 className="font-bold text-gray-800 text-sm truncate min-w-0 flex-1">{req.name}</h4>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap ${
+                      <span className={`text-[10px] font-bold !px-2 !py-0.5 rounded-full shrink-0 whitespace-nowrap ${
                         req.type === 'loan' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'
                       }`}>
                         {req.type === 'loan' ? '대출' : '할부 구매'}
@@ -314,7 +314,7 @@ export default function ParentView() {
 
           {completedContracts.length > 0 && (
             <div>
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 mt-4">처리 완료</h3>
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider !mb-2 !mt-4">처리 완료</h3>
               {completedContracts.map(req => (
                 <div key={req.id} className="bg-white/70 rounded-xl p-4 flex items-center gap-3 border border-gray-100 mb-2 overflow-hidden">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0 ${
@@ -337,17 +337,17 @@ export default function ParentView() {
 
       {/* ═══════ 전체 내역 탭 ═══════ */}
       {activeTab === 'history' && (
-        <div className="mx-4 mt-4 space-y-2">
+        <div className="!mx-4 !mt-4 space-y-2">
           {state.transactions.length === 0 && (
             <div className="text-center py-10 text-parent-400">
-              <p className="text-4xl mb-2">📝</p>
+              <p className="text-4xl !mb-2">📝</p>
               <p className="font-semibold">거래 내역이 없습니다</p>
             </div>
           )}
           {state.transactions.map((tx) => (
             <div
               key={tx.id}
-              className="bg-white rounded-xl p-4 flex items-center gap-3 border border-parent-100 overflow-hidden"
+              className="bg-white rounded-xl !p-4 flex items-center gap-3 border border-parent-100 overflow-hidden"
             >
               <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm shrink-0 ${
                 tx.type === 'allowance' ? 'bg-green-100 text-green-600'
@@ -739,7 +739,7 @@ function RequestCard({ req, onDecide, isHold }) {
 
       {/* 자녀 사유 — 눈에 띄게 */}
       {req.reason && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl px-3 py-2 mb-3 overflow-hidden">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl !px-3 !py-2 mb-3 overflow-hidden">
           <p className="text-[10px] font-bold text-yellow-700 mb-0.5">💌 자녀의 이유:</p>
           <p className="text-xs text-gray-700 italic break-words">&quot;{req.reason}&quot;</p>
         </div>
